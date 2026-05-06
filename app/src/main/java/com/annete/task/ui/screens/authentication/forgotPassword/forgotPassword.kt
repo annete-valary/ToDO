@@ -14,12 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 @Composable
 fun ForgotPasswordScreen(
-    onResetClick: () -> Unit,
+    viewModel: ForgotPasswordViewModel = viewModel(),
     onBackToLoginClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
 
     val composition by rememberLottieComposition(LottieCompositionSpec.Url("https://lottie.host/8048126e-4734-4b4d-9e65-72863955639b/2Wb8Nf4G0Q.json"))
     val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
@@ -48,34 +50,56 @@ fun ForgotPasswordScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(
-            text = "Enter your email address and we will send you instructions to reset your password.",
-            fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.outline,
-            textAlign = TextAlign.Center
-        )
+        if (uiState.isEmailSent) {
+            Text(
+                text = "Instructions to reset your password have been sent to ${uiState.email}.",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center
+            )
+        } else {
+            Text(
+                text = "Enter your email address and we will send you instructions to reset your password.",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.outline,
+                textAlign = TextAlign.Center
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
-        )
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = { viewModel.onEmailChange(it) },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
+                isError = uiState.errorMessage != null
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            uiState.errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
-        Button(
-            onClick = onResetClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text("Reset Password", fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = { viewModel.resetPassword() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Reset Password", fontSize = 18.sp)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

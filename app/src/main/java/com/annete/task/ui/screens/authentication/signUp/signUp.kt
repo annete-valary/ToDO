@@ -13,14 +13,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.airbnb.lottie.compose.*
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 @Composable
 fun SignUpScreen(
-    onSignUpClick: () -> Unit,
+    viewModel: SignUpViewModel = viewModel(),
+    onSignUpSuccess: () -> Unit,
     onLoginClick: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
 
     val composition by rememberLottieComposition(LottieCompositionSpec.Url("https://lottie.host/1709d76c-3832-4740-9f5b-1c5c3666f7f6/L0fP8pT1l0.json"))
     val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
@@ -50,45 +56,86 @@ fun SignUpScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
+            value = uiState.fullName,
+            onValueChange = { viewModel.onFullNameChange(it) },
             label = { Text("Full Name") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
+            value = uiState.email,
+            onValueChange = { viewModel.onEmailChange(it) },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = uiState.password,
+            onValueChange = { viewModel.onPasswordChange(it) },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            singleLine = true
+            trailingIcon = {
+                val image = if (uiState.isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
+                    Icon(imageVector = image, contentDescription = null)
+                }
+            },
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = uiState.confirmPassword,
+            onValueChange = { viewModel.onConfirmPasswordChange(it) },
+            label = { Text("Confirm Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (uiState.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (uiState.isConfirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { viewModel.toggleConfirmPasswordVisibility() }) {
+                    Icon(imageVector = image, contentDescription = null)
+                }
+            },
+            singleLine = true,
+            isError = uiState.errorMessage != null
+        )
+
+        uiState.errorMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            onClick = onSignUpClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text("Sign Up", fontSize = 18.sp)
+        if (uiState.isLoading) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = { viewModel.signUp(onSignUpSuccess) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Sign Up", fontSize = 18.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

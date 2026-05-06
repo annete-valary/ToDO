@@ -14,23 +14,22 @@ import com.annete.task.ui.screens.onboarding.OnboardingScreen
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = ROUTES.LOGIN.name) {
+    NavHost(navController = navController, startDestination = ROUTES.ONBOARDING.name) {
         composable(ROUTES.LOGIN.name) {
             LoginScreen(
-                onLoginClick = { navController.navigate(ROUTES.HOME.name) },
+                onLoginSuccess = { navController.navigate(ROUTES.HOME.name) },
                 onSignUpClick = { navController.navigate(ROUTES.SIGNUP.name) },
                 onForgotPasswordClick = { navController.navigate(ROUTES.FORGOT_PASSWORD.name) }
             )
         }
         composable(ROUTES.SIGNUP.name) {
             SignUpScreen(
-                onSignUpClick = { navController.navigate(ROUTES.HOME.name) },
+                onSignUpSuccess = { navController.navigate(ROUTES.HOME.name) },
                 onLoginClick = { navController.navigate(ROUTES.LOGIN.name) }
             )
         }
         composable(ROUTES.FORGOT_PASSWORD.name) {
             ForgotPasswordScreen(
-                onResetClick = { /* Handle reset logic */ },
                 onBackToLoginClick = { navController.navigate(ROUTES.LOGIN.name) }
             )
         }
@@ -38,7 +37,11 @@ fun AppNavigation() {
             HomeScreen()
         }
         composable(ROUTES.ONBOARDING.name) {
-            OnboardingScreen()
+            OnboardingScreen(onFinish = {
+                navController.navigate(ROUTES.LOGIN.name) {
+                    popUpTo(ROUTES.ONBOARDING.name) { inclusive = true }
+                }
+            })
         }
     }
 }

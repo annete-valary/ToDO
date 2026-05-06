@@ -16,20 +16,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.airbnb.lottie.compose.*
+
+
+
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit,
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit,
     onSignUpClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    val composition by rememberLottieComposition(LottieCompositionSpec.Url("https://lottie.host/7970d4c8-36f9-42f2-8178-95842f1504d9/W0hR1X1H8m.json"))
-    val progress by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -38,14 +37,6 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        LottieAnimation(
-            composition = composition,
-            progress = { progress },
-            modifier = Modifier
-                .size(200.dp)
-                .padding(bottom = 16.dp)
-        )
-
         Text(
             text = "Welcome Back",
             fontSize = 28.sp,
@@ -64,31 +55,41 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
+            value = uiState.email,
+            onValueChange = { viewModel.onEmailChange(it) },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = uiState.password,
+            onValueChange = { viewModel.onPasswordChange(it) },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                val image = if (uiState.isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
                     Icon(imageVector = image, contentDescription = null)
                 }
             },
-            singleLine = true
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
+
+        uiState.errorMessage?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -103,14 +104,18 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            onClick = onLoginClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text("Login", fontSize = 18.sp)
+        if (uiState.isLoading) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = { viewModel.login(onLoginSuccess) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Login", fontSize = 18.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

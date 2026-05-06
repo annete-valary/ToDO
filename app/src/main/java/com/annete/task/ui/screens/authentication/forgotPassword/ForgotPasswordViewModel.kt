@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+import com.annete.task.data.util.toUserFriendlyMessage
+
 class ForgotPasswordViewModel(
     private val repository: AuthRepository = AuthRepositoryImpl()
 ) : ViewModel() {
@@ -37,7 +39,7 @@ class ForgotPasswordViewModel(
             result.onSuccess {
                 _uiState.update { it.copy(isEmailSent = true) }
             }.onFailure { e ->
-                _uiState.update { it.copy(errorMessage = e.message ?: "Failed to send reset email") }
+                _uiState.update { it.copy(errorMessage = e.toUserFriendlyMessage()) }
             }
         }
     }
